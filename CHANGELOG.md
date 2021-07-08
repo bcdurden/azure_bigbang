@@ -2,11 +2,7 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- [Changelog](#changelog)
-  - [[Unreleased]](#unreleased)
-    - [Added](#added)
-
-## [Unreleased]
+## [1.0.0]
 
 ### Added
 
@@ -28,3 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - [CHANGELOG.md](CHANGELOG.md)
   - [CODEOWNERS](CODEOWNERS)
   - [CONTRIBUTING.md](CONTRIBUTING.md)
+- Terraform template for AWS with...
+  - Multi-environment support
+  - High-availability (cross-zone) and auto-scaling
+  - Private and public subnets
+  - Load balancer
+  - Bastion server
