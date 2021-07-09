@@ -27,7 +27,7 @@ remote_state {
   config = {
     encrypt = true
     key     = format("%s/terraform.tfstate", path_relative_to_include())
-    bucket  = "p1-bigbang-live-tf-states-${local.env.region}"
+    bucket  = "${local.env.name}-terraform-state"
     region  = local.env.region
   }
 }
