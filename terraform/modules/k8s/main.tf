@@ -16,9 +16,9 @@ resource "null_resource" "kubeconfig" {
       export KUBECONFIGBAK=$KUBECONFIG
       export KUBECONFIG=~/.kube/new:~/.kube/config
       # Replace default with cluster name
-      sed -ri 's/: default$/: ${var.name}/g'
+      sed -ri "s/: default$/: ${var.name}/g"
       # Update user only with more info
-      sed -ri 's/(user|- name): ${var.name}$/\1: clusterUser_${var.name}/g' ~/.kube/new
+      sed -ri "s/(user|- name): ${var.name}$/\1: clusterUser_${var.name}/g" ~/.kube/new
       # Do not redirect to ~/.kube/config or you may truncate the results
       kubectl config view --flatten > ~/.kube/merged
       mv -f ~/.kube/merged ~/.kube/config

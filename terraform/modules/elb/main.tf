@@ -125,13 +125,5 @@ resource "aws_security_group" "public_nlb_pool" {
     cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.private_ip])
   }
 
-  ingress {
-    description       = "Allow public Network Load Balancer traffic"
-    from_port         = 0
-    to_port           = 0
-    protocol          = -1
-    cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.public_ip])
-  }
-
   tags = var.tags
 }
