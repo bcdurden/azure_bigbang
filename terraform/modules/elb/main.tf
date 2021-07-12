@@ -5,112 +5,133 @@
 # - Security group created for other entities to use for ingress from the ELB
 # - Attaching a pool to the load balancer is done outside of this Terraform
 
-# Security group for load balancer
-resource "aws_security_group" "elb" {
-  name_prefix = "${var.name}-elb-"
-  description = "${var.name} Elastic Load Balancer"
-  vpc_id      = "${var.vpc_id}"
+resource "aws_lb" "public_nlb" {
+  name               = "${var.name}-public-nlb"
+  internal           = false
+  load_balancer_type = "network"
+  subnets            = var.subnet_ids
 
-  # Allow all HTTP traffic
-  ingress {
-    description = "HTTP Traffic"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  tags = merge({}, var.tags)
+}
+
+resource "aws_lb_target_group" "public_nlb_http" {
+  name     = "${var.name}-public-nlb-http"
+  port     = var.node_port_http
+  protocol = "TCP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    port           = var.node_port_health_checks
+    path           = "/healthz/ready"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+  tags = merge({}, var.tags)
+}
+
+resource "aws_lb_target_group" "public_nlb_https" {
+  name     = "${var.name}-public-nlb-https"
+  port     = var.node_port_https
+  protocol = "TCP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    port           = var.node_port_health_checks
+    path           = "/healthz/ready"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+  tags = merge({}, var.tags)
+}
+
+resource "aws_lb_target_group" "public_nlb_sni" {
+  name     = "${var.name}-public-nlb-sni"
+  port     = var.node_port_sni
+  protocol = "TCP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    port           = var.node_port_health_checks
+    path           = "/healthz/ready"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+  tags = merge({}, var.tags)
+}
+
+resource "aws_lb_listener" "public_nlb_http" {
+  load_balancer_arn = aws_lb.public_nlb.arn
+  port              = "80"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.public_nlb_http.arn
+  }
+}
+
+resource "aws_lb_listener" "public_nlb_https" {
+  load_balancer_arn = aws_lb.public_nlb.arn
+  port              = "443"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.public_nlb_https.arn
+  }
+}
+
+resource "aws_lb_listener" "public_nlb_sni" {
+  load_balancer_arn = aws_lb.public_nlb.arn
+  port              = "15443"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.public_nlb_sni.arn
+  }
+}
+
+# Retrieve the IP addresses of the nlb
+data "aws_network_interface" "public_nlb" {
+  for_each = toset(var.subnet_ids)
+
+  filter {
+    name   = "description"
+    values = ["ELB ${aws_lb.public_nlb.arn_suffix}"]
   }
 
-  # Allow all HTTPS traffic
-  ingress {
-    description = "HTTPS Traffic"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  filter {
+    name   = "subnet-id"
+    values = [each.value]
   }
-
-  # Allow all egress
-  egress {
-    description = "All traffic out"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.tags
 }
 
 # Security group for server pool to allow traffic from load balancer
-resource "aws_security_group" "elb_pool" {
-  name_prefix = "${var.name}-elb-pool-"
-  description = "${var.name} Traffic to Elastic Load Balancer server pool"
+resource "aws_security_group" "public_nlb_pool" {
+  name_prefix = "${var.name}-public-nlb-to-pool-"
+  description = "${var.name} Traffic from public Network Load Balancer to server pool"
   vpc_id      = "${var.vpc_id}"
 
   # Allow all traffic from load balancer
   ingress {
-    description       = "Allow Load Balancer Traffic"
+    description       = "Allow public Network Load Balancer traffic"
     from_port         = 0
     to_port           = 0
-    protocol          = "-1"
-    security_groups = [aws_security_group.elb.id]
+    protocol          = -1
+    cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.private_ip])
+  }
+
+  ingress {
+    description       = "Allow public Network Load Balancer traffic"
+    from_port         = 0
+    to_port           = 0
+    protocol          = -1
+    cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.public_ip])
   }
 
   tags = var.tags
-}
-
-# Create Elastic Load Balancer
-module "elb" {
-  source          = "terraform-aws-modules/elb/aws"
-  version         = "~> 3.0"
-  name = "${var.name}-elb"
-  subnets         = var.subnet_ids
-  security_groups = [aws_security_group.elb.id]
-  internal        = false
-
-  # Port: Description
-  # 80: HTTP for applications
-  # 443: HTTPS for applications
-  # 15021: Istio Health Checks
-  # 15443: Istio SNI Routing in multi-cluster environment
-  listener = [
-    {
-      instance_port     = var.node_port_http
-      instance_protocol = "TCP"
-      lb_port           = 80
-      lb_protocol       = "tcp"
-    },
-    {
-      instance_port     = var.node_port_https
-      instance_protocol = "TCP"
-      lb_port           = 443
-      lb_protocol       = "tcp"
-    },
-    {
-      instance_port     = var.node_port_health_checks
-      instance_protocol = "TCP"
-      lb_port           = 15021
-      lb_protocol       = "tcp"
-    },
-    {
-      instance_port     = var.node_port_sni
-      instance_protocol = "TCP"
-      lb_port           = 15443
-      lb_protocol       = "tcp"
-    },
-  ]
-
-  health_check = {
-    target              = "TCP:${var.node_port_health_checks}"
-    interval            = 10
-    healthy_threshold   = 2
-    unhealthy_threshold = 6
-    timeout             = 5
-  }
-
-  access_logs = {}
-
-  tags = merge({
-    "kubernetes.io/cluster/${var.name}" = "shared"
-  }, var.tags)
 }
