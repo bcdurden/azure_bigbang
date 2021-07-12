@@ -14,28 +14,27 @@ variable "subnet_ids" {
   type = list(string)
 }
 
+variable "node_port_health_checks" {
+  description = "The node port to use for Istio health check traffic"
+  type = string
+  default = "30000"
+}
 variable "node_port_http" {
   description = "The node port to use for HTTP traffic"
   type = string
-  default = "30080"
+  default = "30001"
 }
 
 variable "node_port_https" {
   description = "The node port to use for HTTPS traffic"
   type = string
-  default = "30443"
-}
-
-variable "node_port_health_checks" {
-  description = "The node port to use for Istio health check traffic"
-  type = string
-  default = "32021"
+  default = "30002"
 }
 
 variable "node_port_sni" {
   description = "The node port to use for Istio SNI traffic"
   type = string
-  default = "32443"
+  default = "30003"
 }
 
 variable "tags" {

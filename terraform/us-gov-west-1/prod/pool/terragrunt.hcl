@@ -16,7 +16,7 @@ include {
 dependency "elb" {
   config_path = "../elb"
   mock_outputs = {
-    elb_id = "mock_elb_id"
+    elb_target_group_arns = ["mock_elb_id"]
   }
 }
 
@@ -28,7 +28,7 @@ dependency "agent" {
 }
 
 inputs = {
-  elb_id = dependency.elb.outputs.elb_id
+  elb_target_group_arns = dependency.elb.outputs.elb_target_group_arns
   pool_asg_id = dependency.agent.outputs.nodepool_id
   tags = merge(local.env.region_tags, local.env.tags, {})
 }
