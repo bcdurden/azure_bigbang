@@ -8,7 +8,7 @@ locals {
 }
 
 terraform {
-  source = "git::https://repo1.dsop.io/platform-one/distros/rancher-federal/rke2/rke2-aws-terraform.git//modules/agent-nodepool?ref=v1.1.8"
+  source = "git::https://repo1.dsop.io/platform-one/distros/rancher-federal/rke2/rke2-aws-terraform.git//modules/agent-nodepool?ref=v1.1.9"
 }
 
 include {
@@ -81,4 +81,3 @@ inputs = {
 
   tags = merge(local.env.region_tags, local.env.tags, {})
 }
-
