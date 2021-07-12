@@ -1,7 +1,13 @@
 # This file performs post-cluster actions, like downloading the kubeconfig
+locals {
+  env = merge(
+    yamldecode(file(find_in_parent_folders("region.yaml"))),
+    yamldecode(file(find_in_parent_folders("env.yaml")))
+  )
+}
 
 terraform {
-  source = "${path_relative_from_include()}//modules/k8s"
+  source = "${path_relative_from_include()}//modules/s3"
 }
 
 include {
@@ -16,5 +22,6 @@ dependency "server" {
 }
 
 inputs = {
+  name = local.env.name
   kubeconfig_path = dependency.server.outputs.kubeconfig_path
 }
