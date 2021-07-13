@@ -118,11 +118,35 @@ resource "aws_security_group" "public_nlb_pool" {
 
   # Allow all traffic from load balancer
   ingress {
-    description       = "Allow public Network Load Balancer traffic"
-    from_port         = 0
-    to_port           = 0
-    protocol          = -1
+    description       = "Allow public Network Load Balancer traffic to health check"
+    from_port         = var.node_port_health_checks
+    to_port           = var.node_port_health_checks
+    protocol          = "tcp"
     cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.private_ip])
+  }
+
+  ingress {
+    description       = "Allow internet traffic to HTTP node port"
+    from_port         = var.node_port_http
+    to_port           = var.node_port_http
+    protocol          = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description       = "Allow internet traffic to HTTPS node port"
+    from_port         = var.node_port_https
+    to_port           = var.node_port_https
+    protocol          = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description       = "Allow internet traffic to SNI node port"
+    from_port         = var.node_port_sni
+    to_port           = var.node_port_sni
+    protocol          = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
   }
 
   tags = var.tags
