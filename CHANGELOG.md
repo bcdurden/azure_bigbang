@@ -2,6 +2,23 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1]
+
+### Changed
+- Security groups between internet facing network load balancer and agent's node ports updated to fix ingress
+
+## [1.1.0]
+
+### Added
+
+- Upload of private SSH to encrypted S3 bucket
+- Rename of `default` Kubernetes profile to environment name
+- Change permissions of local Kubernetes config file to read/write of owner only
+
+### Changed
+
+- Migrated terraform classic load balancer to regular load balancer
+
 ## [1.0.1]
 
 ### Changed
