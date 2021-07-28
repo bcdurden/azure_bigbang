@@ -173,7 +173,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
    ```shell
    # The private key is not stored in Git (and should NEVER be stored there).  We deploy it manually by exporting the key into a secret.
    kubectl create namespace bigbang
-   gpg --export-secret-key --armor ${fp} | kubectl create secret generic sops-gpg -n bigbang --from-file=bigbangkey=/dev/stdin
+   gpg --export-secret-key --armor ${fp} | kubectl create secret generic sops-gpg -n bigbang --from-file=bigbangkey.asc=/dev/stdin
    ```
 
 1. Create imagePullSecrets for Flux
@@ -184,6 +184,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    # Adding a space before this command keeps our PAT out of our history
     kubectl create secret docker-registry private-registry --docker-server=registry1.dso.mil --docker-username=<Your IronBank Username> --docker-password=<Your IronBank Personal Access Token> -n flux-system
+   ```
 
 1. Create Git credentials for Flux
 
@@ -232,7 +233,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
    # If you are deployed on a remote host you will need to point "kiali.bigbang.dev" to your cluster master node via your /etc/hosts file
    ```
 
-   > If you cannot get to the main page of Kiali, it may be due to an expired certificate.  Check the expiration of the certificate in `base/bigbang-dev-cert.yaml`.
+   > If you cannot get to the main page of Kiali, it may be due to an expired certificate.  Check the expiration of the certificate in `base/configmap.yaml`.
 
    > For troubleshooting deployment problems, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) documentation.
 
@@ -274,7 +275,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dsop.io/platform-one/big-bang/bigbang.git/base/?ref=v1.8.0
+  - https://repo1.dsop.io/platform-one/big-bang/bigbang.git/base/?ref=v1.12.0
   ```
 
 - Reference for the Big Bang helm release:
@@ -287,7 +288,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
    spec:
       ref:
          $patch: replace
-         semver: "1.8.0"
+         semver: "1.12.0"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
@@ -303,7 +304,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      semver: "1.9.0"
+      semver: "1.13.0"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -312,7 +313,7 @@ Then, commit your change:
 
 ```shell
    git add kustomization.yaml
-   git commit -m "feat(dev): update bigbang to 1.9.0"
+   git commit -m "feat(dev): update bigbang to 1.13.0"
    git push
 ```
 
@@ -326,19 +327,49 @@ When you are done testing, you can update the reference in `base` (and delete th
 
 ### Update the domain
 
-Big Bang deploys applications to `*.bigbang.dev` by default.  You can override the `bigbang.dev` domain to your domain by updating `dev/configmap.yaml` and adding the following:
+Big Bang deploys applications to `*.bigbang.dev` by default.  You can override the `bigbang.dev` domain to your domain by updating `base/configmap.yaml` and adding the following:
 
 ```yaml
 hostname: insert-your-domain-here
+# Also, comment out or delete the TLS certificate for *.bigbang.dev
 ```
+
+Since you are changing the domain, you will also need to update your TLS certificates.  You should have already removed the default `*.bigbang.dev` certificate from `base/configmap.yaml`.  Now, add your new certificate to `base/secrets.enc.yaml`.
+
+```shell
+sops base/secrets.enc.yaml
+```
+
+Put your TLS certificate and private key where it states `replace-with-your-tls-certificate` and `replace-with-your-tls-private-key`.
+
+> The name of the secret must be `common-bb` if the secret is in the `base` folder or `environment-bb` if the secret is in the `dev` or `prod` folder.  The `environment-bb` values take precedence over the `common-bb` values.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+   name: common-bb
+stringData:
+   values.yaml: |-
+      registryCredentials:
+      - registry: registry1.dso.mil
+        username: already-configured-iron-bank-user
+        password: already-configured-iron-bank-personal-access-token
+      istio:
+        ingress:
+          cert: "replace-with-your-tls-certificate"
+          key: "replace-with-your-tls-private-key"
+```
+
+When you save the file, it will automatically encrypt your secret using SOPS.
 
 > NOTE: The `dev` template includes several overrides to minimize resource usage and increase polling time in a development environment.  They are provided for convenience and are NOT required.
 
 Commit your change:
 
 ```shell
-   git add configmap.yaml
-   git commit -m "feat(dev): updated domain name"
+   git add base/configmap.yaml base/secrets.enc.yaml
+   git commit -m "feat(dev): updated domain name and certificate"
    git push
 ```
 
