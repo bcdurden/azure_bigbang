@@ -17,4 +17,4 @@ patchesStrategicMerge:
   spec:
     ref:
       $patch: replace
-      semver: "1.12.0"
+      tag: "1.12.0"

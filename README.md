@@ -86,6 +86,28 @@ sed -i "s/pgp: FALSE_KEY_HERE/pgp: ${fp}/" .sops.yaml
 
 ## On MacOS
 sed -i "" "s/pgp: FALSE_KEY_HERE/pgp: ${fp}/" .sops.yaml
+
+# Save encrypted secrets into Git
+# Configuration changes must be stored in Git to take affect
+git add .sops.yaml
+git commit -m "chore: update default encryption key"
+git push --set-upstream origin template-demo
+```
+
+### Add TLS Certificates
+
+The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default.  A demo TLS certificate is provided in `base/bigbang-dev-cert.yaml` to use.  Certificates should be encrypted before pushing to Git since they contain both the public and private key.
+
+```shell
+cd base
+
+# Encrypt the existing certifiate
+sops -e bigbang-dev-cert.yaml > secrets.enc.yaml
+
+# Save encrypted TLS certificate into Git
+git add secrets.enc.yaml
+git commit -m "chore: add bigbang.dev tls certificates"
+git push
 ```
 
 ### Add Pull Credentials
@@ -95,8 +117,7 @@ You will need pull credentials for Iron Bank to retrieve images for Big Bang.
 > Secrets can be specific to an environment if they are located in that environment's folder (e.g. `prod`, `dev`).  Or, they can be shared between environments if located in the `base` directory.
 
 ``` shell
-# Create a new encrypted secret to contain your pull credentials
-cd base
+# Edit the same secret holding your TLS certificates to add the pull credentials
 sops secrets.enc.yaml
 ```
 
@@ -115,16 +136,17 @@ stringData:
       - registry: registry1.dso.mil
         username: replace-with-your-iron-bank-user
         password: replace-with-your-iron-bank-personal-access-token
+      istio:
+        # Leave the TLS certificate info here
 ```
 
-When you save the file, it will automatically encrypt your secret using SOPS.
+When you save the file, it will automatically re-encrypt your secret using SOPS.
 
 ```shell
-# Save encrypted secrets into Git
-# Configuration changes must be stored in Git to take affect
-git add secrets.enc.yaml ../.sops.yaml
-git commit -m "chore: added encrypted credentials"
-git push --set-upstream origin template-demo
+# Save pull credentials into Git
+git add secrets.enc.yaml
+git commit -m "chore: added iron bank pull credentials"
+git push
 ```
 
 > Your private key to decrypt these secrets is stored in your GPG key ring.  You must **NEVER** export this key and commit it to your Git repository since this would comprimise your secrets.
@@ -198,7 +220,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=master | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.12.0` to the correct tag or branch.
+   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.12.0 | kubectl apply -f -
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -288,7 +311,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
    spec:
       ref:
          $patch: replace
-         semver: "1.12.0"
+         tag: "1.12.0"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
@@ -304,7 +327,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      semver: "1.13.0"
+      tag: "1.13.0"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -319,7 +342,7 @@ Then, commit your change:
 
 > It may take Big Bang up to 10 minutes to recognize your changes and start to deploy them.  This is based on the interval set for polling.  You can force Big Bang to recheck by running the [sync.sh](https://repo1.dsop.io/platform-one/big-bang/bigbang/-/blob/master/hack/sync.sh) script.
 
-It is recommended that you track Big Bang releases using the version.  However, you can use `tag` or `branch` in place of `semver` if needed.  The kustomize base uses [Go-Getter](https://github.com/hashicorp/go-getter)'s syntax for the reference.  The helm release (GitRepository) resource uses the [GitRepository CRD](https://toolkit.fluxcd.io/components/source/gitrepositories/#specification)'s syntax.
+It is recommended that you track Big Bang releases using the version.  However, you can use `branch` in place of `tag` if needed.  The kustomize base uses [Go-Getter](https://github.com/hashicorp/go-getter)'s syntax for the reference.  The helm release (GitRepository) resource uses the [GitRepository CRD](https://toolkit.fluxcd.io/components/source/gitrepositories/#specification)'s syntax.
 
 When you are done testing, you can update the reference in `base` (and delete this setting in `dev`) to update Big Bang in all environments.
 
@@ -331,51 +354,32 @@ Big Bang deploys applications to `*.bigbang.dev` by default.  You can override t
 
 ```yaml
 hostname: insert-your-domain-here
-# Also, comment out or delete the TLS certificate for *.bigbang.dev
 ```
 
-Since you are changing the domain, you will also need to update your TLS certificates.  You should have already removed the default `*.bigbang.dev` certificate from `base/configmap.yaml`.  Now, add your new certificate to `base/secrets.enc.yaml`.
+In addition, you will need to update the TLS certificates by updating `base/secrets.enc.yaml`.
 
 ```shell
+# Open and edit the encrypted file
 sops base/secrets.enc.yaml
 ```
 
-Put your TLS certificate and private key where it states `replace-with-your-tls-certificate` and `replace-with-your-tls-private-key`.
+After saving the secrets.enc.yaml file, it will be automatically re-encrypted.
 
-> The name of the secret must be `common-bb` if the secret is in the `base` folder or `environment-bb` if the secret is in the `dev` or `prod` folder.  The `environment-bb` values take precedence over the `common-bb` values.
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-   name: common-bb
-stringData:
-   values.yaml: |-
-      registryCredentials:
-      - registry: registry1.dso.mil
-        username: already-configured-iron-bank-user
-        password: already-configured-iron-bank-personal-access-token
-      istio:
-        ingress:
-          cert: "replace-with-your-tls-certificate"
-          key: "replace-with-your-tls-private-key"
+``` shell
+# Push changes to Git
+git add base/configmap.yaml base/secrets.enc.yaml
+git commit -m "chore: updated domain and tls certificates"
+git push
 ```
 
-When you save the file, it will automatically encrypt your secret using SOPS.
-
-> NOTE: The `dev` template includes several overrides to minimize resource usage and increase polling time in a development environment.  They are provided for convenience and are NOT required.
-
-Commit your change:
-
-```shell
-   git add base/configmap.yaml base/secrets.enc.yaml
-   git commit -m "feat(dev): updated domain name and certificate"
-   git push
-```
+> If you have different certificates for `dev` and `prod`, you can also put the values in `dev/secrets.enc.yaml` or `prod/secrets.enc.yaml` respectively.  The name of the secret must be `common-bb` if the secret is in the `base` folder or `environment-bb` if the secret is in the `dev` or `prod` folder.  The `environment-bb` values take precedence over the `common-bb` values.
+Make sure to add the file to `kustomization.yaml` as a resource if it is not already.
 
 ### Additional Big Bang values
 
-For additional configuration options, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) and [Big Bang Package](https://repo1.dsop.io/platform-one/big-bang/apps) documentation.
+For additional configuration options, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) and [Big Bang Package](https://repo1.dsop.io/platform-one/big-bang/apps) documentation.  Big Bang values can be passed down in the `configmap.yaml` or `secrets.enc.yaml`.  See the Kubernetes documentation on [configmaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for differences between the two.  Secrets should always be SOPS encrypted before committing to Git.
+
+> NOTE: The `dev` template includes several overrides in the `configmap.yaml` to minimize resource usage and increase polling time in a development environment.  They are provided for convenience and are NOT required.
 
 ### Additional resources
 

@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1]
+
+### Changed
+
+- Moved TLS cert back out of configmap.yaml
+- Updated documentation on how to add and update TLS certificates to encrypted secret.
+- Fixed Big Bang version mismatch using semver in kustomization
+- Fixed flux install instructions to use version rather than master.  New versions of flux may not be backwards compatible.
+- Cleaned up dev values.yaml
+
 ## [1.2.0]
 
 ### Changed
