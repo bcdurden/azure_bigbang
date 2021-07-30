@@ -15,7 +15,6 @@ logging:
         resources:
           requests:
             cpu: .5
-          limits: {}
       data:
         count: 1
         persistence:
@@ -23,7 +22,6 @@ logging:
         resources:
           requests:
             cpu: .5
-          limits: {}
 
 fluentbit:
   values:
@@ -31,7 +29,11 @@ fluentbit:
       privileged: true
 
 clusterAuditor:
-  enabled: false
+  values:
+    resources:
+      requests:
+        cpu: 100m
+        memory: .5Gi
 
 monitoring:
   values:
@@ -69,7 +71,12 @@ monitoring:
           memory: 30Mi
 
 gatekeeper:
-  enabled: false
+  values:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
 
 twistlock:
   enabled: false
