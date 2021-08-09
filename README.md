@@ -425,7 +425,7 @@ If you need to [rotate your GPG encryption keys](#create-gpg-encryption-key) for
    ```shell
    # The private key is not stored in Git (and should NEVER be stored there).  We deploy it manually by exporting the key into a secret.
    kubectl delete secret sops-gpg -n bigbang
-   gpg --export-secret-key --armor INSERT_NEW_KEY_FINGERPRINT_HERE | kubectl create secret generic sops-gpg -n bigbang --from-file=bigbangkey=/dev/stdin
+   gpg --export-secret-key --armor INSERT_NEW_KEY_FINGERPRINT_HERE | kubectl create secret generic sops-gpg -n bigbang --from-file=bigbangkey.asc=/dev/stdin
    ```
 
 1. Commit changes
