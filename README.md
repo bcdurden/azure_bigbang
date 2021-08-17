@@ -377,6 +377,21 @@ git push
 > If you have different certificates for `dev` and `prod`, you can also put the values in `dev/secrets.enc.yaml` or `prod/secrets.enc.yaml` respectively.  The name of the secret must be `common-bb` if the secret is in the `base` folder or `environment-bb` if the secret is in the `dev` or `prod` folder.  The `environment-bb` values take precedence over the `common-bb` values.
 Make sure to add the file to `kustomization.yaml` as a resource if it is not already.
 
+### Use NodePorts for Istio Ingress Gateway
+
+Istio Ingress Gateway is deployed with the LoadBalancer service type by default. You can configure Istio to use nodePorts instead by updating `dev/configmap.yaml`:
+
+```yaml
+istio:
+  ingressGateways:
+    public-ingressgateway:
+      type: "NodePort"
+      nodePortBase: 30000
+```
+
+Node ports are assigned starting from nodePortBase. The nodePortBase specifies the start of a range of 4 unused node ports. Node port will be assigned as follows: Port 15021 (Status) = nodePortBase, Port 80 = nodePortBase+1, Port 443 = nodePortBase+2, Port 15443 (SNI) = nodePortBase+3.
+Node port base should be in the range from 30000 to 32764. Alternatively, the kubernetesResourceSpec can be used to configure all port parameters. If nodePortBase isn't specified ports will be assigned randomly.
+
 ### Additional Big Bang values
 
 For additional configuration options, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) and [Big Bang Package](https://repo1.dsop.io/platform-one/big-bang/apps) documentation.  Big Bang values can be passed down in the `configmap.yaml` or `secrets.enc.yaml`.  See the Kubernetes documentation on [configmaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for differences between the two.  Secrets should always be SOPS encrypted before committing to Git.
