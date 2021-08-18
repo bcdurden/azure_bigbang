@@ -1,12 +1,12 @@
 variable "name" {}
 
 variable "principal_grants" {
-  type = list(string)
+  type        = list(string)
   description = "principals to grant Decrypt to"
-  default = []
+  default     = []
 }
 
 variable "tags" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }

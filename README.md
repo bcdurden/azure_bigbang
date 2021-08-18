@@ -1,6 +1,8 @@
 # BigBang Template
 
-#### _This is a mirror of a government repo hosted on [Repo1](https://repo1.dso.mil/) by [DoD Platform One](http://p1.dso.mil/).  Please direct all code changes, issues and comments to https://repo1.dso.mil/platform-one/big-bang/customers/template_**
+> _This is a mirror of a government repo hosted on [Repo1](https://repo1.dso.mil/) by [DoD Platform One](http://p1.dso.mil/).  Please direct all code changes, issues and comments to <https://repo1.dso.mil/platform-one/big-bang/customers/template>_**
+
+[[_TOC_]]
 
 This folder contains a template that you can replicate in your own Git repo to get started with Big Bang configuration.  If you are new to Big Bang it is recommended you start with the [Big Bang Quickstart](https://repo1.dso.mil/platform-one/quick-start/big-bang) before attempting customization.
 
@@ -9,7 +11,7 @@ The main benefits of this template include:
 - Isolation of the Big Bang product and your custom configuration
   - Allows you to easily consume upstream Big Bang changes since you never change the product
   - Big Bang product tags are explicitly referenced in your configuration, giving you control over upgrades
-- [GitOps](https://www.weave.works/technologies/gitops/) for your deployments configrations
+- [GitOps](https://www.weave.works/technologies/gitops/) for your deployments configurations
   - Single source of truth for the configurations deployed
   - Historical tracking of changes made
   - Allows tighter control of what is deployed to production (via merge requests)
@@ -21,11 +23,11 @@ The main benefits of this template include:
   - Secrets (e.g. pull credentials) can be shared across deployments.
     > NOTE:  SOPS [supports multiple keys for encrypting the same secret](https://dev.to/stack-labs/manage-your-secrets-in-git-with-sops-common-operations-118g) so that each environment can use a different SOPS key but share a secret.
 
-### Prerequisites
+## Prerequisites
 
 To deploy Big Bang, the following items are required:
 
-- Kubernetes cluster [ready for Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/blob/master/docs/d_prerequisites.md)
+- Kubernetes cluster [ready for Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/tree/master/docs/guides/prerequisites)
 - A git repo for your configuration
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [GPG (Mac users need to read this important note)](https://repo1.dso.mil/platform-one/onboarding/big-bang/engineering-cohort/-/blob/master/lab_guides/01-Preflight-Access-Checks/A-software-check.md#gpg)
@@ -64,7 +66,7 @@ git checkout -b template-demo
 
 ### Create GPG Encryption Key
 
-To make sure your pull secrets are not comprimized when uploaded to Git, you must generate your own encryption key:
+To make sure your pull secrets are not compromised when uploaded to Git, you must generate your own encryption key:
 
 > Keys should be created without a passphrase so that Flux can use the private key to decrypt secrets in the Big Bang cluster.
 
@@ -101,7 +103,7 @@ The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default.  
 ```shell
 cd base
 
-# Encrypt the existing certifiate
+# Encrypt the existing certificate
 sops -e bigbang-dev-cert.yaml > secrets.enc.yaml
 
 # Save encrypted TLS certificate into Git
@@ -149,7 +151,7 @@ git commit -m "chore: added iron bank pull credentials"
 git push
 ```
 
-> Your private key to decrypt these secrets is stored in your GPG key ring.  You must **NEVER** export this key and commit it to your Git repository since this would comprimise your secrets.
+> Your private key to decrypt these secrets is stored in your GPG key ring.  You must **NEVER** export this key and commit it to your Git repository since this would compromise your secrets.
 
 ### Configure for GitOps
 
@@ -245,7 +247,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
    # Verify secrets and configmaps are deployed
    # At a minimum, you will have the following:
    #  secrets: sops-gpg, private-git, common-bb, and environment-bb
-   #  configmaps: conmmon, environment
+   #  configmaps: common, environment
    kubectl get -n bigbang secrets,configmaps
 
    # Watch deployment
@@ -257,7 +259,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
    ```
 
    > If you cannot get to the main page of Kiali, it may be due to an expired certificate.  Check the expiration of the certificate in `base/configmap.yaml`.
-
+   >
    > For troubleshooting deployment problems, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) documentation.
 
 You now have successfully deployed Big Bang.  Your next step is to customize the configuration.
@@ -284,7 +286,7 @@ You now have successfully deployed Big Bang.  Your next step is to customize the
 1. Big Bang will automatically pick up your change and make the necessary changes.
 
    ```shell
-   # Watch deployment for twislock to be deployed
+   # Watch deployment for twistlock to be deployed
    watch kubectl get hr,po -A
 
    # Test deployment by opening a browser to "twistlock.bigbang.dev" to get to the Twistlock application
@@ -383,7 +385,7 @@ For additional configuration options, refer to the [Big Bang](https://repo1.dsop
 
 ### Additional resources
 
-Using Kustomize, you can add additional resources to the deployment if needed.  Read the [Kustomization](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/) documentation for futher details.
+Using Kustomize, you can add additional resources to the deployment if needed.  Read the [Kustomization](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/) documentation for further details.
 
 ## Secrets
 
@@ -405,7 +407,7 @@ You will need to update `.sops.yaml` with your configuration based on the links 
 If you need to [rotate your GPG encryption keys](#create-gpg-encryption-key) for any reason, you will also need to re-encrypt any encrypted secrets.
 
 1. Update `.sops.yaml` configuration file
-`.sops.yaml` holds all of the key fingerpints used for SOPS.  Update `pgp`'s value to the new key's fingerprint. You can list your locally stored fingerprints using `gpg -k`.
+`.sops.yaml` holds all of the key fingerprints used for SOPS.  Update `pgp`'s value to the new key's fingerprint. You can list your locally stored fingerprints using `gpg -k`.
 
    ```yaml
    creation_rules:
@@ -472,7 +474,7 @@ In our template, we have a `dev` and a `prod` environment with a shared `base`. 
 
 - Shared Iron Bank pull credential
 - Different database passwords for `dev` and `prod`
-- Differnet SOPS keys for `dev` and `prod`
+- Different SOPS keys for `dev` and `prod`
 
 1. Setup `.sops.yaml` for multiple folders:
 
@@ -547,6 +549,6 @@ To start, we may have the following in each folder:
 
 Big Bang `dev` value changes can be made by simply modifying `dev/configmap.yaml`.  `base` and `dev` create two separate configmaps, named `common` and `environment` respectively, with the `environment` values taking precedence over `common` values in Big Bang.
 
-The same concept applies to `dev` secret changes, with two separate secrets named `common-bb` and `environment-bb` used for values to Big Bang, with the `environment-bb` values taking prcedence over the `common-bb` values in Big Bang.
+The same concept applies to `dev` secret changes, with two separate secrets named `common-bb` and `environment-bb` used for values to Big Bang, with the `environment-bb` values taking precedence over the `common-bb` values in Big Bang.
 
 If a new resource must be deployed, for example a TLS cert, you must add a `resources:` section to the `kustomization.yaml` to refer to the new file.  See the base directory for an example.

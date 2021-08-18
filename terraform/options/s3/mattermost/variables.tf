@@ -1,11 +1,11 @@
 variable "name" {}
 
 variable "bucket_force_destroy" {
-  type = bool
+  type    = bool
   default = true
 }
 
 variable "tags" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }

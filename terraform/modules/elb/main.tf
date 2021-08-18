@@ -21,8 +21,8 @@ resource "aws_lb_target_group" "public_nlb_http" {
   vpc_id   = var.vpc_id
 
   health_check {
-    port           = var.node_port_health_checks
-    path           = "/healthz/ready"
+    port = var.node_port_health_checks
+    path = "/healthz/ready"
   }
   lifecycle {
     create_before_destroy = true
@@ -37,8 +37,8 @@ resource "aws_lb_target_group" "public_nlb_https" {
   vpc_id   = var.vpc_id
 
   health_check {
-    port           = var.node_port_health_checks
-    path           = "/healthz/ready"
+    port = var.node_port_health_checks
+    path = "/healthz/ready"
   }
   lifecycle {
     create_before_destroy = true
@@ -53,8 +53,8 @@ resource "aws_lb_target_group" "public_nlb_sni" {
   vpc_id   = var.vpc_id
 
   health_check {
-    port           = var.node_port_health_checks
-    path           = "/healthz/ready"
+    port = var.node_port_health_checks
+    path = "/healthz/ready"
   }
   lifecycle {
     create_before_destroy = true
@@ -114,39 +114,39 @@ data "aws_network_interface" "public_nlb" {
 resource "aws_security_group" "public_nlb_pool" {
   name_prefix = "${var.name}-public-nlb-to-pool-"
   description = "${var.name} Traffic from public Network Load Balancer to server pool"
-  vpc_id      = "${var.vpc_id}"
+  vpc_id      = var.vpc_id
 
   # Allow all traffic from load balancer
   ingress {
-    description       = "Allow public Network Load Balancer traffic to health check"
-    from_port         = var.node_port_health_checks
-    to_port           = var.node_port_health_checks
-    protocol          = "tcp"
-    cidr_blocks       = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.private_ip])
+    description = "Allow public Network Load Balancer traffic to health check"
+    from_port   = var.node_port_health_checks
+    to_port     = var.node_port_health_checks
+    protocol    = "tcp"
+    cidr_blocks = formatlist("%s/32", [for eni in data.aws_network_interface.public_nlb : eni.private_ip])
   }
 
   ingress {
-    description       = "Allow internet traffic to HTTP node port"
-    from_port         = var.node_port_http
-    to_port           = var.node_port_http
-    protocol          = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
+    description = "Allow internet traffic to HTTP node port"
+    from_port   = var.node_port_http
+    to_port     = var.node_port_http
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description       = "Allow internet traffic to HTTPS node port"
-    from_port         = var.node_port_https
-    to_port           = var.node_port_https
-    protocol          = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
+    description = "Allow internet traffic to HTTPS node port"
+    from_port   = var.node_port_https
+    to_port     = var.node_port_https
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description       = "Allow internet traffic to SNI node port"
-    from_port         = var.node_port_sni
-    to_port           = var.node_port_sni
-    protocol          = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
+    description = "Allow internet traffic to SNI node port"
+    from_port   = var.node_port_sni
+    to_port     = var.node_port_sni
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = var.tags
