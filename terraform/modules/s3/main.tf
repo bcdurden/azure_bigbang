@@ -35,7 +35,7 @@ resource "null_resource" "kubeconfig" {
 
 # Upload SSH private key
 resource "aws_s3_bucket_object" "sshkey" {
-  key                    = "ssh-private-key.pem"
+  key = "ssh-private-key.pem"
   # Get bucket name in middle of s3://<bucket name>/rke2.yaml
   bucket                 = replace(replace(var.kubeconfig_path, "/\\/[^/]*$/", ""), "/^[^/]*\\/\\//", "")
   source                 = pathexpand("${var.private_key_path}/${var.name}.pem")

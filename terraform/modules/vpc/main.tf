@@ -19,9 +19,9 @@ locals {
   cidr_step = max(10, local.num_azs)
 
   # Based on VPC CIDR, create subnet ranges
-  cidr_index = range(local.num_azs)
-  public_subnet_cidrs = [ for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i) ]
-  private_subnet_cidrs = [ for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i + local.cidr_step) ]
+  cidr_index           = range(local.num_azs)
+  public_subnet_cidrs  = [for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i)]
+  private_subnet_cidrs = [for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i + local.cidr_step)]
 }
 
 # https://github.com/terraform-aws-modules/terraform-aws-vpc
@@ -39,8 +39,8 @@ module "vpc" {
   # and if the NAT gateway’s Availability Zone is down, resources in the other Availability
   # Zones lose internet access. To create an Availability Zone-independent architecture,
   # create a NAT gateway in each Availability Zone.
-  enable_nat_gateway   = true
-  single_nat_gateway   = false
+  enable_nat_gateway     = true
+  single_nat_gateway     = false
   one_nat_gateway_per_az = true
 
   enable_dns_hostnames = true
@@ -52,12 +52,12 @@ module "vpc" {
   # Add in required tags for proper AWS CCM integration
   public_subnet_tags = merge({
     "kubernetes.io/cluster/${var.name}" = "shared"
-    "kubernetes.io/role/elb"              = "1"
+    "kubernetes.io/role/elb"            = "1"
   }, var.tags)
 
   private_subnet_tags = merge({
     "kubernetes.io/cluster/${var.name}" = "shared"
-    "kubernetes.io/role/internal-elb"     = "1"
+    "kubernetes.io/role/internal-elb"   = "1"
   }, var.tags)
 
   tags = merge({

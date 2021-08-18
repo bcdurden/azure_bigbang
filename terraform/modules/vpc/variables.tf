@@ -1,7 +1,7 @@
 variable "name" {
   description = "The name to apply to the VPC and Subnets"
-  type    = string
-  default = "bigbang-dev"
+  type        = string
+  default     = "bigbang-dev"
 }
 
 variable "vpc_cidr" {
@@ -11,12 +11,12 @@ variable "vpc_cidr" {
 
 variable "aws_region" {
   description = "The AWS region to deploy resources"
-  type    = string
-  default = "us-gov-west-1"
+  type        = string
+  default     = "us-gov-west-1"
 }
 
 variable "tags" {
   description = "The tags to apply to resources"
-  type = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
