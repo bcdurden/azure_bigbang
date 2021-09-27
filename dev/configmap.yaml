@@ -22,6 +22,35 @@ logging:
         resources:
           requests:
             cpu: .5
+    kibana:
+      count: 1
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+
+monitoring:
+  enabled: true
+  values:
+    prometheus:
+      prometheusSpec:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+          limits: {}
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits: {}
+    prometheus-node-exporter:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 30Mi
+        limits: {}
 
 fluentbit:
   values:
@@ -35,40 +64,6 @@ clusterAuditor:
         cpu: 100m
         memory: .5Gi
 
-monitoring:
-  values:
-    alertmanager:
-      alertmanagerSpec:
-        resources:
-          requests:
-            cpu: 100m
-            memory: 200Mi
-    prometheusOperator:
-      resources:
-        requests:
-          cpu: 250m
-          memory: 400Mi
-    prometheus:
-      prometheusSpec:
-        resources:
-          requests:
-            cpu: 100m
-            memory: 200Mi
-    grafana:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-    kubeStateMetrics:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 32Mi
-    nodeExporter:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 30Mi
 
 gatekeeper:
   values:
