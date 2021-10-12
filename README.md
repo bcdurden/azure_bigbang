@@ -355,7 +355,7 @@ When you are done testing, you can update the reference in `base` (and delete th
 Big Bang deploys applications to `*.bigbang.dev` by default.  You can override the `bigbang.dev` domain to your domain by updating `base/configmap.yaml` and adding the following:
 
 ```yaml
-hostname: insert-your-domain-here
+domain: insert-your-domain-here
 ```
 
 In addition, you will need to update the TLS certificates by updating `base/secrets.enc.yaml`.

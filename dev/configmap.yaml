@@ -1,4 +1,4 @@
-hostname: bigbang.dev
+domain: bigbang.dev
 
 flux:
   interval: 1m
