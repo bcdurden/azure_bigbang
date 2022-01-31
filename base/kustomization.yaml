@@ -1,7 +1,7 @@
 # When updating the version of BigBang, make sure to update
 #   both the bases reference and the GitRepository reference
 bases:
-- git::https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base?ref=1.25.1
+- git::https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base?ref=1.26.0
 configMapGenerator:
   - name: common
     behavior: merge
@@ -17,4 +17,4 @@ patchesStrategicMerge:
   spec:
     ref:
       $patch: replace
-      tag: "1.25.1"
+      tag: "1.26.0"
