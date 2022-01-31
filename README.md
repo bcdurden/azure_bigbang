@@ -222,8 +222,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   # If you are using a different version of Big Bang, make sure to update the `?ref=1.25.0` to the correct tag or branch.
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.25.1 | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.26.0` to the correct tag or branch.
+   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.26.0 | kubectl apply -f -
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -300,7 +300,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dsop.io/platform-one/big-bang/bigbang.git/base/?ref=v1.25.1
+  - https://repo1.dsop.io/platform-one/big-bang/bigbang.git/base/?ref=v1.26.0
   ```
 
 - Reference for the Big Bang helm release:
@@ -313,7 +313,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
    spec:
       ref:
          $patch: replace
-         tag: "1.25.1"
+         tag: "1.26.0"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
