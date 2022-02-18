@@ -222,8 +222,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   # If you are using a different version of Big Bang, make sure to update the `?ref=1.26.0` to the correct tag or branch.
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.26.0 | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.27.1` to the correct tag or branch.
+   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.27.1 | kubectl apply -f -
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -260,7 +260,7 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    > If you cannot get to the main page of Kiali, it may be due to an expired certificate.  Check the expiration of the certificate in `base/configmap.yaml`.
    >
-   > For troubleshooting deployment problems, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) documentation.
+   > For troubleshooting deployment problems, refer to the [Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang) documentation.
 
 You now have successfully deployed Big Bang.  Your next step is to customize the configuration.
 
@@ -300,7 +300,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dsop.io/platform-one/big-bang/bigbang.git/base/?ref=v1.26.0
+  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.27.1
   ```
 
 - Reference for the Big Bang helm release:
@@ -313,7 +313,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
    spec:
       ref:
          $patch: replace
-         tag: "1.26.0"
+         tag: "1.27.1"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
@@ -329,7 +329,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      tag: "1.13.0"
+      tag: "1.27.1"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -338,11 +338,11 @@ Then, commit your change:
 
 ```shell
    git add kustomization.yaml
-   git commit -m "feat(dev): update bigbang to 1.13.0"
+   git commit -m "feat(dev): update bigbang to 1.27.1"
    git push
 ```
 
-> It may take Big Bang up to 10 minutes to recognize your changes and start to deploy them.  This is based on the interval set for polling.  You can force Big Bang to recheck by running the [sync.sh](https://repo1.dsop.io/platform-one/big-bang/bigbang/-/blob/master/hack/sync.sh) script.
+> It may take Big Bang up to 10 minutes to recognize your changes and start to deploy them.  This is based on the interval set for polling.  You can force Big Bang to recheck by running the [sync.sh](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/blob/master/scripts/sync.sh) script.
 
 It is recommended that you track Big Bang releases using the version.  However, you can use `branch` in place of `tag` if needed.  The kustomize base uses [Go-Getter](https://github.com/hashicorp/go-getter)'s syntax for the reference.  The helm release (GitRepository) resource uses the [GitRepository CRD](https://toolkit.fluxcd.io/components/source/gitrepositories/#specification)'s syntax.
 
@@ -394,7 +394,7 @@ Node port base should be in the range from 30000 to 32764. Alternatively, the ku
 
 ### Additional Big Bang values
 
-For additional configuration options, refer to the [Big Bang](https://repo1.dsop.io/platform-one/big-bang/bigbang) and [Big Bang Package](https://repo1.dsop.io/platform-one/big-bang/apps) documentation.  Big Bang values can be passed down in the `configmap.yaml` or `secrets.enc.yaml`.  See the Kubernetes documentation on [configmaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for differences between the two.  Secrets should always be SOPS encrypted before committing to Git.
+For additional configuration options, refer to the [Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang) and [Big Bang Package](https://repo1.dso.mil/platform-one/big-bang/apps) documentation.  Big Bang values can be passed down in the `configmap.yaml` or `secrets.enc.yaml`.  See the Kubernetes documentation on [configmaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for differences between the two.  Secrets should always be SOPS encrypted before committing to Git.
 
 > NOTE: The `dev` template includes several overrides in the `configmap.yaml` to minimize resource usage and increase polling time in a development environment.  They are provided for convenience and are NOT required.
 
