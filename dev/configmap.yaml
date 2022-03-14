@@ -11,23 +11,25 @@ logging:
       master:
         count: 1
         persistence:
-          size: 5Gi
+          size: 256Mi
         resources:
           requests:
-            cpu: .5
+            cpu: 200m
+            memory: 1Gi
       data:
         count: 1
         persistence:
-          size: 5Gi
+          size: 256Mi
         resources:
           requests:
-            cpu: .5
+            cpu: 200m
+            memory: 1Gi
     kibana:
       count: 1
       resources:
         requests:
-          cpu: 500m
-          memory: 1Gi
+          cpu: 200m
+          memory: 512Mi
 
 monitoring:
   enabled: true
@@ -36,46 +38,35 @@ monitoring:
       prometheusSpec:
         resources:
           requests:
-            cpu: 100m
-            memory: 200Mi
-          limits: {}
-    kube-state-metrics:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 32Mi
-        limits: {}
-    prometheus-node-exporter:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 30Mi
-        limits: {}
+            cpu: 200m
+            memory: 1Gi
 
 fluentbit:
   values:
     securityContext:
       privileged: true
 
-clusterAuditor:
-  values:
-    resources:
-      requests:
-        cpu: 100m
-        memory: .5Gi
-
-
 gatekeeper:
   values:
     replicas: 1
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
+    controllerManager:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+    audit:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+
+kyverno:
+  values:
+    replicaCount: 1
 
 twistlock:
   enabled: false
   values:
     console:
       persistence:
-        size: 5Gi
+        size: 256Mi
