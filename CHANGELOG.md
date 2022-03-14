@@ -1,7 +1,16 @@
 # Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ---
+
+## [1.9.0]
+
+### Changed
+
+- Updated base to BigBang release 1.29.0
+- Adjusted persistent size, memory, and cpu settings for dev overrides
+
 ## [1.8.0]
 
 ### Changed
