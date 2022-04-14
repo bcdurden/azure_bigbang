@@ -4,7 +4,7 @@
 
 [[_TOC_]]
 
-This folder contains a template that you can replicate in your own Git repo to get started with Big Bang configuration.  If you are new to Big Bang it is recommended you start with the [Big Bang Quickstart](https://repo1.dso.mil/platform-one/quick-start/big-bang) before attempting customization.
+This folder contains a template that you can replicate in your own Git repo to get started with Big Bang configuration.  If you are new to Big Bang it is recommended you start with the [Big Bang Quickstart](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/blob/master/docs/guides/deployment_scenarios/quickstart.md) before attempting customization.
 
 The main benefits of this template include:
 
@@ -19,8 +19,8 @@ The main benefits of this template include:
   - Avoids problem of `helm upgrade` using `values.yaml` that are not controlled
   - Allows you to limit access to production Kubernetes cluster since all changes are made via Git
 - Shared configurations across deployments
-  - Common settings across deployments (e.g. dev, staging, prod) can be configured in one place
-  - Secrets (e.g. pull credentials) can be shared across deployments.
+  - Common settings across deployment environments within an impact level can be configured in one place.
+  - Secrets (e.g. image pull credentials) can be shared across deployments.
     > NOTE:  SOPS [supports multiple keys for encrypting the same secret](https://dev.to/stack-labs/manage-your-secrets-in-git-with-sops-common-operations-118g) so that each environment can use a different SOPS key but share a secret.
 
 ## Prerequisites
@@ -28,7 +28,7 @@ The main benefits of this template include:
 To deploy Big Bang, the following items are required:
 
 - Kubernetes cluster [ready for Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/tree/master/docs/guides/prerequisites)
-- A git repo for your configuration
+- A git repo for infrastructure and configuration as code
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [GPG (Mac users need to read this important note)](https://repo1.dso.mil/platform-one/onboarding/big-bang/engineering-cohort/-/blob/master/lab_guides/01-Preflight-Access-Checks/A-software-check.md#gpg)
 - [SOPS](https://github.com/mozilla/sops)
@@ -50,6 +50,8 @@ Each environment consists of a Kubernetes manifest containing Flux resources (`b
 
 > To insure variables (e.g. `${fp}`) are set correctly, execute all of the steps below in the same terminal window.
 
+## Git Repository
+
 ### Create Git Repository
 
 We need to work off our own Git repo for storing configuration.  So, you should **fork** this repo into a **private** Git repo owned by yourself or your project.  Then, clone your repo locally.
@@ -64,23 +66,68 @@ git checkout -b template-demo
 
 > It is recommended that you create your own branch so that you can [pull the original repository's `main` branch as a mirror](https://docs.gitlab.com/ee/user/project/repository/repository_mirroring.html) to keep it in sync.
 
+### Git Repository Best Practices
+* If you plan to deploy clusters to multiple impact levels, then you should follow these best practices:
+  * Have at least one unique git repository for each impact level where a cluster will be deployed to.
+  * Match the IL where the git repository will be hosted to the impact level where the corresponding cluster will be hosted.
+    * Example:  
+      The git repository corresponding to an IL4 Cluster Deployment should be hosted on an IL4 approved hosting environment.  
+      The Infrastructure as code for an IL4 Cluster Deployment shouldn't be hosted on an IL2 git repository.  
+    * The reason for this is that:
+      * Infrastructure as code secrets corresponding to a cluster deployed to IL4 (or IL5), would be considered CUI (Controlled Unclassified Information), and thus should be isolated from IL2.
+      * Even though both IL2 and IL4 secrets would be encrypted, it's still best practice to keep them in separate repositories, because when server side git hooks are not in place, then it's possible for human error to result in a non-encrypted secrets being committed to a git repository.
+      * Any encrypted infrastructure as code secrets added to /base, would get shared by all clusters, if multiple impact levels existed in the same repo, then secrets added to /base could accidentally end up being shared across impact levels.
+* The intent of the /base folder is to allow configuration and in some cases secrets to be shared between clusters.
+  * Examples of how to properly use /base to share a secret between clusters in the same impact level.
+    * If you have several developer sandbox, development, and test clusters operating at IL2, you may wish to have some level of shared configuration between them.
+    * If you have a production and acceptance environment for an IL4 cluster, you may wish for them to share an image pull secret between them.
+* It's worth mentioning that while the above best practices are applicable to the majority of scenarios, Authorizing Officials(AOs) can always choose to make exceptions and accept risks if necessary to meet the needs of unique mission requirements, and the presence of a Cross Domain Solution could also result in nuances.
+
 ### Create GPG Encryption Key
 
 To make sure your pull secrets are not compromised when uploaded to Git, you must generate your own encryption key:
 
-> Keys should be created without a passphrase so that Flux can use the private key to decrypt secrets in the Big Bang cluster.
-
 ```shell
+# Figure out what version of gpg your running
+gpg --version | head -n 1
+# Centos 7 and older AmazonLinux tend to run gpg 2.0.x
+# Centos 8, Ubuntu 20, and Debian 11 tend run gpg 2.2.x
+# Centos 9 and Mac tend to run gpg 2.3.x
+
 # Generate a GPG master key
-# The GPG key fingerprint will be stored in the $fp variable
-export fp=`gpg --quick-generate-key bigbang-sops rsa4096 encr | sed -e 's/ *//;2q;d;'`
-gpg --quick-add-key ${fp} rsa4096 encr
+# Note: 
+# By default, gpg 2.3.x generated keys, will generate errors when 
+# consumed by clients running gpg 2.0.x - 2.2.x 
+# gpg 2.3.x users must use the following multiline keygen command for 
+# compatibility with sops and older clients using gpg 2.0.x - 2.2.x
+# gpg 2.2.x users should also user the following key gen multiline command
+# gpg 2.0.x users substitute --full-generate-key for --gen-key
+#
+# Using this multiline command to generate the key makes it work in all cases.
+gpg --batch --full-generate-key --rfc4880 --digest-algo sha512 --cert-digest-algo sha512 <<EOF
+    %no-protection
+    # %no-protection: means the private key won't be password protected 
+    # (no password is a fluxcd requirement, it might also be true for argo & sops)
+    Key-Type: RSA
+    Key-Length: 4096
+    Subkey-Type: RSA
+    Subkey-Length: 4096
+    Expire-Date: 0
+    Name-Real: bigbang-dev-environment
+    Name-Comment: bigbang-dev-environment
+EOF
 
-# By default our key is set to expire in 2 years.
-# Here we reduce this down to 14 days for learning/demo purposes
-gpg --quick-set-expire ${fp} 14d
+# The following command will store the GPG Key's Fingerprint in the $fp variable
+# (The following command has been verified to work consistently between multiple versions of gpg: 2.0.x, 2.2.x, 2.3.x)
+export fp=$(gpg --list-keys --fingerprint | grep "bigbang-dev-environment" -B 1 | grep -v "bigbang-dev-environment" | tr -d ' ' | tr -d 'Keyfingerprint=')
+echo $fp
 
-# Rekey the .sops.yaml
+# The above command will make a key that doesn't expire
+# You can optionally run the following if you need the key to expire after 1 year.
+gpg --quick-set-expire ${fp} 1y
+
+# cd to the location of the .sops.yaml, then run the following to set the encryption key
+# sed: stream editor is like a cli version of find and replace
 # This ensures your secrets are only decryptable by your key
 
 ## On linux
@@ -96,9 +143,52 @@ git commit -m "chore: update default encryption key"
 git push --set-upstream origin template-demo
 ```
 
+### Sops Tip and Notes
+* `File Editing Tip:`  
+  * Linux users: if you install Visual Studio Code or Sublime Text, the install process tends to add the binary to the $PATH, so linux users can easily edit files using `vi file_to_edit`, `subl file_to_edit`, or `code file_to_edit`
+  * Mac users: you can do the following to add the binary to your systems PATH variable to get the same functionality (zsh users adjust appropriately)
+    ```shell
+    sudo ln -s "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
+    echo 'export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"' >> ~/.bashrc
+    tail ~/.bashrc
+    source ~/.bashrc
+    ```
+* `Sops Tip:` You can edit a sops encrypted file with your preferred text editor.
+    ```shell
+    # Note the following commands require .sops.yaml to have a valid gpg fingerprint configured
+    sops ~/file_to_edit #Will edit the file using the default editor, usually vi
+    EDITOR="subl --wait" sops ~/file_to_edit # Will edit the file using Sublime Text
+    EDITOR="code --wait" sops ~/file_to_edit # Will edit the file using Visual Studio Code
+    # You can also permanently add the EDITOR variable to your profile if desired:
+    echo 'export EDITOR="subl --wait"' >> ~/.bashrc
+    ```
+* `Sops Note`: [Sops isn't guaranteed to preserve the yaml formatting of a file it encrypts](https://github.com/mozilla/sops/issues/864)
+* `Sops Note`: sops is an abstraction layer that allows several secret backends to be used. 
+  * AGE and GPG (also known as PGP) are generic cloud agnostic options that have no dependencies. It's important to note that while [the sops repo recommends AGE over PGP](https://github.com/mozilla/sops#22encrypting-using-age), For DoD use cases it's preferable to use GPG, because GPG offers NIST approved crypto algorithms. (AGE is just as secure as GPG; however, AGE's crypto algorithms, X25519 and ChaCha20-Poly1305 are not NIST approved algorithms ([X25519](https://en.wikipedia.org/wiki/Curve25519) is used to generate asymmetric key pairs and [ChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305) is a symmetric encryption algorithm. The example above has GPG leverage RSA 4096 and AES 256 which are both NIST approved)
+  * GPG backed sops is shown as an example above, because it's generic and cloud agnostic.
+  * If possible Cloud Service Provider based Key Management Service based solutions like AWS KMS, GCP KMS, and Azure Key Vault should be preferred over GPG, for the following reasons:
+    * CSP KMS solutions are FIPS 140-2 approved
+    * KMS solutions leverage identity based decryption, since the service never exposes the key and does encryption / decryption operations on behalf of users, the decryption key can't leak.
+    * Identity based decryption means you can protect access to decryption rights using RBAC, and you can revoke access to the ability to decrypt data.
+    * CSP KMS solutions have easy to satisfy dependencies
+  * Hashicorp Vault is also a good option; however, it's worth pointing out that:
+    * Using Vault means introducing Vault as a dependency, and standing up a production grade instance of Vault requires a good amount of work.
+    * If a FIPS 140-2 compliant instance of Vault is needed, then Vault would need to be backed by an HSM, and that requires a Vault Enterprise License.
+  * If you want to leverage a KMS based solution, you'll need to update `.sops.yaml` based on the following links:
+    * [AWS KMS](https://github.com/mozilla/sops#27kms-aws-profiles)
+    * [GCP KMS](https://github.com/mozilla/sops#23encrypting-using-gcp-kms)
+    * [Azure Key Vault](https://github.com/mozilla/sops#24encrypting-using-azure-key-vault)
+    * [Hashicorp Vault](https://github.com/mozilla/sops#25encrypting-using-hashicorp-vault)
+
 ### Add TLS Certificates
 
-The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default.  A demo TLS certificate is provided in `base/bigbang-dev-cert.yaml` to use.  Certificates should be encrypted before pushing to Git since they contain both the public and private key.
+The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default. (Which results in sites that look like this: https://*.bigbang.dev) A demo TLS wildcard certificate is provided in `base/bigbang-dev-cert.yaml` to use.  
+
+#### Important Security Note:
+Since the private key of the demo cert is in a public repo all traffic sent to a demo site should be treated as compromised and can be decrypted by MITM packet sniffers, so it's necessary to do one of the following:
+1. Use the demo cert for demos over private IP space / trusted networks. (VPNs and tools like [shuttle](https://github.com/sshuttle/sshuttle) can make this easier, (shuttle can allow Linux and Mac users to treat an ssh bastion like a VPN), Note: Certain firewall and endpoint protection software can block the functionality of sshuttle.)
+2. If using Cloud Infrastructure with Public IPs to test, ensure no Cloud IAM rights are attached to the instances. (Otherwise it'd be possible for a MITM attacker to listen in on traffic to a service like ArgoCD, and sniff ArgoCD admin creds, which could have kubectl admin creds, and if the kubernetes cluster has Cloud IAM rights, that could result in lateral movement deeper into a cloud account/potential compromise of resources beyond a demo cluster.)
+3. Another alternative is to not use the demo HTTPS cert and provide your own.
 
 ```shell
 cd base
@@ -131,15 +221,22 @@ Add the following contents to the newly created sops secret.  Put your Iron Bank
 apiVersion: v1
 kind: Secret
 metadata:
-   name: common-bb
+  name: common-bb
 stringData:
-   values.yaml: |-
-      registryCredentials:
-      - registry: registry1.dso.mil
-        username: replace-with-your-iron-bank-user
-        password: replace-with-your-iron-bank-personal-access-token
-      istio:
-        # Leave the TLS certificate info here
+  values.yaml: |-
+    registryCredentials:
+    - registry: registry1.dso.mil
+      username: replace-with-your-iron-bank-user
+      password: replace-with-your-iron-bank-personal-access-token
+    istio:
+      gateways: 
+# ...
+# Clarifying Note: The 'Add TLS Certificates', section above had you 
+# create this file from a pre-existing file with an embedded demo HTTPS 
+# cert. So when you go to edit this file you should see a pre-existing
+# section with istio.gateways.public.tls.key, etc.
+# This note is to clarify that you should manually edit the pre-existing
+# file to append the registryCredentials section as shown.
 ```
 
 When you save the file, it will automatically re-encrypt your secret using SOPS.
@@ -401,21 +498,6 @@ For additional configuration options, refer to the [Big Bang](https://repo1.dso.
 ### Additional resources
 
 Using Kustomize, you can add additional resources to the deployment if needed.  Read the [Kustomization](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/) documentation for further details.
-
-## Secrets
-
-You have already [created a GPG Encryption Key pair](#create-gpg-encryption-key) and [deployed encrypted pull credentials](#add-pull-credentials) above.  Here are some additional scenarios you may encounter with secrets.
-
-### Key Vault
-
-SOPS supports several key vaults to help control access to your secure keys including:
-
-- [AWS KMS](https://github.com/mozilla/sops#27kms-aws-profiles)
-- [GCP KMS](https://github.com/mozilla/sops#23encrypting-using-gcp-kms)
-- [Azure Key Vault](https://github.com/mozilla/sops#24encrypting-using-azure-key-vault)
-- [Hashicorp Vault](https://github.com/mozilla/sops#25encrypting-using-hashicorp-vault)
-
-You will need to update `.sops.yaml` with your configuration based on the links above.
 
 ### Key Rotation
 
