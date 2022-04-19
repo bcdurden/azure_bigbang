@@ -28,6 +28,7 @@ The main benefits of this template include:
 To deploy Big Bang, the following items are required:
 
 - Kubernetes cluster [ready for Big Bang](https://repo1.dso.mil/platform-one/big-bang/bigbang/-/tree/master/docs/guides/prerequisites)
+  - [Optional] Code to setup a production-ready infrastructure on AWS with an RKE2 Kubernetes cluster is provided in the [terraform directory](./terraform/).
 - A git repo for infrastructure and configuration as code
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [GPG (Mac users need to read this important note)](https://repo1.dso.mil/platform-one/onboarding/big-bang/engineering-cohort/-/blob/master/lab_guides/01-Preflight-Access-Checks/A-software-check.md#gpg)
@@ -67,12 +68,13 @@ git checkout -b template-demo
 > It is recommended that you create your own branch so that you can [pull the original repository's `main` branch as a mirror](https://docs.gitlab.com/ee/user/project/repository/repository_mirroring.html) to keep it in sync.
 
 ### Git Repository Best Practices
+
 * If you plan to deploy clusters to multiple impact levels, then you should follow these best practices:
   * Have at least one unique git repository for each impact level where a cluster will be deployed to.
   * Match the IL where the git repository will be hosted to the impact level where the corresponding cluster will be hosted.
-    * Example:  
-      The git repository corresponding to an IL4 Cluster Deployment should be hosted on an IL4 approved hosting environment.  
-      The Infrastructure as code for an IL4 Cluster Deployment shouldn't be hosted on an IL2 git repository.  
+    * Example:
+      The git repository corresponding to an IL4 Cluster Deployment should be hosted on an IL4 approved hosting environment.
+      The Infrastructure as code for an IL4 Cluster Deployment shouldn't be hosted on an IL2 git repository.
     * The reason for this is that:
       * Infrastructure as code secrets corresponding to a cluster deployed to IL4 (or IL5), would be considered CUI (Controlled Unclassified Information), and thus should be isolated from IL2.
       * Even though both IL2 and IL4 secrets would be encrypted, it's still best practice to keep them in separate repositories, because when server side git hooks are not in place, then it's possible for human error to result in a non-encrypted secrets being committed to a git repository.
@@ -95,10 +97,10 @@ gpg --version | head -n 1
 # Centos 9 and Mac tend to run gpg 2.3.x
 
 # Generate a GPG master key
-# Note: 
-# By default, gpg 2.3.x generated keys, will generate errors when 
-# consumed by clients running gpg 2.0.x - 2.2.x 
-# gpg 2.3.x users must use the following multiline keygen command for 
+# Note:
+# By default, gpg 2.3.x generated keys, will generate errors when
+# consumed by clients running gpg 2.0.x - 2.2.x
+# gpg 2.3.x users must use the following multiline keygen command for
 # compatibility with sops and older clients using gpg 2.0.x - 2.2.x
 # gpg 2.2.x users should also user the following key gen multiline command
 # gpg 2.0.x users substitute --full-generate-key for --gen-key
@@ -106,7 +108,7 @@ gpg --version | head -n 1
 # Using this multiline command to generate the key makes it work in all cases.
 gpg --batch --full-generate-key --rfc4880 --digest-algo sha512 --cert-digest-algo sha512 <<EOF
     %no-protection
-    # %no-protection: means the private key won't be password protected 
+    # %no-protection: means the private key won't be password protected
     # (no password is a fluxcd requirement, it might also be true for argo & sops)
     Key-Type: RSA
     Key-Length: 4096
@@ -144,16 +146,20 @@ git push --set-upstream origin template-demo
 ```
 
 ### Sops Tip and Notes
-* `File Editing Tip:`  
+
+* `File Editing Tip:`
   * Linux users: if you install Visual Studio Code or Sublime Text, the install process tends to add the binary to the $PATH, so linux users can easily edit files using `vi file_to_edit`, `subl file_to_edit`, or `code file_to_edit`
   * Mac users: you can do the following to add the binary to your systems PATH variable to get the same functionality (zsh users adjust appropriately)
+
     ```shell
     sudo ln -s "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
     echo 'export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"' >> ~/.bashrc
     tail ~/.bashrc
     source ~/.bashrc
     ```
+
 * `Sops Tip:` You can edit a sops encrypted file with your preferred text editor.
+
     ```shell
     # Note the following commands require .sops.yaml to have a valid gpg fingerprint configured
     sops ~/file_to_edit #Will edit the file using the default editor, usually vi
@@ -162,8 +168,9 @@ git push --set-upstream origin template-demo
     # You can also permanently add the EDITOR variable to your profile if desired:
     echo 'export EDITOR="subl --wait"' >> ~/.bashrc
     ```
+
 * `Sops Note`: [Sops isn't guaranteed to preserve the yaml formatting of a file it encrypts](https://github.com/mozilla/sops/issues/864)
-* `Sops Note`: sops is an abstraction layer that allows several secret backends to be used. 
+* `Sops Note`: sops is an abstraction layer that allows several secret backends to be used.
   * AGE and GPG (also known as PGP) are generic cloud agnostic options that have no dependencies. It's important to note that while [the sops repo recommends AGE over PGP](https://github.com/mozilla/sops#22encrypting-using-age), For DoD use cases it's preferable to use GPG, because GPG offers NIST approved crypto algorithms. (AGE is just as secure as GPG; however, AGE's crypto algorithms, X25519 and ChaCha20-Poly1305 are not NIST approved algorithms ([X25519](https://en.wikipedia.org/wiki/Curve25519) is used to generate asymmetric key pairs and [ChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305) is a symmetric encryption algorithm. The example above has GPG leverage RSA 4096 and AES 256 which are both NIST approved)
   * GPG backed sops is shown as an example above, because it's generic and cloud agnostic.
   * If possible Cloud Service Provider based Key Management Service based solutions like AWS KMS, GCP KMS, and Azure Key Vault should be preferred over GPG, for the following reasons:
@@ -182,10 +189,12 @@ git push --set-upstream origin template-demo
 
 ### Add TLS Certificates
 
-The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default. (Which results in sites that look like this: https://*.bigbang.dev) A demo TLS wildcard certificate is provided in `base/bigbang-dev-cert.yaml` to use.  
+The `base/configmap.yaml` is setup to use the domain `bigbang.dev` by default. (Which results in sites that look like this: `https://*.bigbang.dev`) A demo TLS wildcard certificate is provided in `base/bigbang-dev-cert.yaml` to use.
 
-#### Important Security Note:
+#### Important Security Note
+
 Since the private key of the demo cert is in a public repo all traffic sent to a demo site should be treated as compromised and can be decrypted by MITM packet sniffers, so it's necessary to do one of the following:
+
 1. Use the demo cert for demos over private IP space / trusted networks. (VPNs and tools like [shuttle](https://github.com/sshuttle/sshuttle) can make this easier, (shuttle can allow Linux and Mac users to treat an ssh bastion like a VPN), Note: Certain firewall and endpoint protection software can block the functionality of sshuttle.)
 2. If using Cloud Infrastructure with Public IPs to test, ensure no Cloud IAM rights are attached to the instances. (Otherwise it'd be possible for a MITM attacker to listen in on traffic to a service like ArgoCD, and sniff ArgoCD admin creds, which could have kubectl admin creds, and if the kubernetes cluster has Cloud IAM rights, that could result in lateral movement deeper into a cloud account/potential compromise of resources beyond a demo cluster.)
 3. Another alternative is to not use the demo HTTPS cert and provide your own.
@@ -229,10 +238,10 @@ stringData:
       username: replace-with-your-iron-bank-user
       password: replace-with-your-iron-bank-personal-access-token
     istio:
-      gateways: 
+      gateways:
 # ...
-# Clarifying Note: The 'Add TLS Certificates', section above had you 
-# create this file from a pre-existing file with an embedded demo HTTPS 
+# Clarifying Note: The 'Add TLS Certificates', section above had you
+# create this file from a pre-existing file with an embedded demo HTTPS
 # cert. So when you go to edit this file you should see a pre-existing
 # section with istio.gateways.public.tls.key, etc.
 # This note is to clarify that you should manually edit the pre-existing
@@ -319,8 +328,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   # If you are using a different version of Big Bang, make sure to update the `?ref=1.29.0` to the correct tag or branch.
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.29.0 | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.31.0` to the correct tag or branch.
+   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.31.0 | kubectl apply -f -
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -397,7 +406,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.29.0
+  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.31.0
   ```
 
 - Reference for the Big Bang helm release:
@@ -410,7 +419,7 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
    spec:
       ref:
          $patch: replace
-         tag: "1.29.0"
+         tag: "1.31.0"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
@@ -426,7 +435,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      tag: "1.29.0"
+      tag: "1.31.0"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -435,7 +444,7 @@ Then, commit your change:
 
 ```shell
    git add kustomization.yaml
-   git commit -m "feat(dev): update bigbang to 1.29.0"
+   git commit -m "feat(dev): update bigbang to 1.31.0"
    git push
 ```
 

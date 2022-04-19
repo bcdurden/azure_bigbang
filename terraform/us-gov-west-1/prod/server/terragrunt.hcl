@@ -8,7 +8,7 @@ locals {
 }
 
 terraform {
-  source = "git::https://repo1.dsop.io/platform-one/distros/rancher-federal/rke2/rke2-aws-terraform.git//?ref=v1.1.9"
+  source = "git::https://repo1.dso.mil/platform-one/distros/rancher-federal/rke2/rke2-aws-terraform.git//?ref=v2.1.0"
 }
 
 include {
