@@ -1,5 +1,12 @@
 domain: bigbang.dev
 
+# Uncomment the following settings if using the AWS RKE2 terraform setup
+# istio:
+#   ingressGateways:
+#     public-ingressgateway:
+#       type: "NodePort"
+#       nodePortBase: 30000
+
 flux:
   interval: 1m
   rollback:

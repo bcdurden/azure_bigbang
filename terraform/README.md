@@ -129,32 +129,19 @@ To ensure ingress into the cluster, load balancers must be configured to ensure 
 
 However, for brevity in this example, we are introducing an alternative, where the load balancer is pre-provisioned and owned by terraform (from your earlier apply step). This provides more control over the load balancer, but also requires the extra step of informing `istio` on installation of the required ports to expose on each node that the pre-created load balancer should forward to.  It's important to note these are the _exact_ same steps that the cloud provider would take if we let Kubernetes provision things for us.
 
-The following configuration in Big Bang's values.yaml will setup the appropriate `NodePorts` to match the [Quickstart](#quickstart) configuration.
+The following configuration in Big Bang's values.yaml will setup the appropriate `NodePorts` to match the [Quickstart](#quickstart) configuration.  This can be set in `../dev/configmap.yaml`
 
 ```yaml
-# Big Bang's values.yaml
 istio:
-  values:
-    ingressGateway:
-      # Use Node Ports instead of creating a load balancer
-      type: NodePort
-      ports:
-        - name: status          # Istio's default health check port
-          port: 15021
-          targetPort: 15021
-          nodePort: 32021       # Port configured in terraform ELB
-        - name: http2
-          port: 80
-          targetPort: 8080
-          nodePort: 30080       # Port configured in terraform ELB
-        - name: https
-          port: 443
-          targetPort: 8443
-          nodePort: 30443       # Port configured in terraform ELB
-        - name: sni             # Istio's SNI Routing port
-          port: 15443
-          targetPort: 15443
-          nodePort: 32443       # Port configured in terraform ELB
+  ingressGateways:
+    public-ingressgateway:
+      type: "NodePort"
+      # This will setup the following ports:
+      # - Health status = 30000
+      # - HTTP = 30001
+      # - HTTPS = 30002
+      # - SNI routing = 30003
+      nodePortBase: 30000
 ```
 
 > The node port values can be customized using the `node_port_*` inputs to the [elb terraform](./modules/elb).
@@ -295,7 +282,7 @@ export VPCId=`aws ec2 describe-vpcs --filters "Name=tag:Name,Values=$CName" --qu
 
 # Get load balancer in VPC that does not contain cluster name
 # Istio in Big Bang creates a load balancer
-export LBDNS=`aws elb describe-load-balancers --query "LoadBalancerDescriptions[? VPCId == '$VPCId' && "'!'"contains(DNSName, 'internal')].DNSName" --output text`
+export LBDNS=`aws elbv2 describe-load-balancers --query "LoadBalancers[? VpcId == '$VPCId'].DNSName" --output text`
 
 # Retrieve IP address of load balancer for /etc/hosts
 export ELBIP=`dig $LBDNS +short | head -1`

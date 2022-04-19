@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.10.0]
+
+### Changed
+
+- Updated base to BigBang release 1.31.0
+- Updated all `dsop.io` references to `dso.mil`
+- Corrected nodeport ingress instructions
+- Updated aws elb command in terraform readme
+- Updated RKE2 to latest terraform, which supports Terraform 4.x and Kubernetes 1.22
+
 ## [1.9.0]
 
 ### Changed
