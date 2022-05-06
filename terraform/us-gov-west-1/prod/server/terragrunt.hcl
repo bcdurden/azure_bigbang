@@ -5,6 +5,7 @@ locals {
     yamldecode(file(find_in_parent_folders("region.yaml"))),
     yamldecode(file(find_in_parent_folders("env.yaml")))
   )
+image_id = run_cmd("sh", "-c", "aws ec2 describe-images --owners 'aws-marketplace' --filters 'Name=product-code,Values=cynhm1j9d2839l7ehzmnes1n0' --query 'sort_by(Images, &CreationDate)[-1].[ImageId]' --output 'text'")
 }
 
 terraform {
@@ -34,11 +35,13 @@ inputs = {
   cluster_name  = local.env.name
   vpc_id        = dependency.vpc.outputs.vpc_id
   subnets       = dependency.vpc.outputs.private_subnet_ids
-  ami           = local.env.cluster.server.image
+  ami           = local.image_id
   servers       = local.env.cluster.server.replicas
   instance_type = local.env.cluster.server.type
-  download      = false
+  download      = true
   enable_ccm    = true
+  rke2_version  = local.env.cluster.rke2_version
+  iam_instance_profile = "InstanceOpsRole"
 
   block_device_mappings = {
     size = local.env.cluster.server.storage.size

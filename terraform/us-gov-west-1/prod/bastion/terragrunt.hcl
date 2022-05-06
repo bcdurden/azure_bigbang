@@ -5,6 +5,7 @@ locals {
     yamldecode(file(find_in_parent_folders("region.yaml"))),
     yamldecode(file(find_in_parent_folders("env.yaml")))
   )
+  image_id = run_cmd("sh", "-c", "aws ec2 describe-images --owners 'aws-marketplace' --filters 'Name=product-code,Values=cynhm1j9d2839l7ehzmnes1n0' --query 'sort_by(Images, &CreationDate)[-1].[ImageId]' --output 'text'")
 }
 
 terraform {
@@ -35,7 +36,7 @@ inputs = {
   name  = local.env.name
   vpc_id = dependency.vpc.outputs.vpc_id
   subnet_ids = dependency.vpc.outputs.public_subnet_ids
-  ami = local.env.bastion.image
+  ami = local.image_id
   instance_type = local.env.bastion.type
   key_name = dependency.ssh.outputs.key_name
   tags = merge(local.env.region_tags, local.env.tags, {})

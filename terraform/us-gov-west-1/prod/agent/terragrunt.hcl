@@ -5,6 +5,7 @@ locals {
     yamldecode(file(find_in_parent_folders("region.yaml"))),
     yamldecode(file(find_in_parent_folders("env.yaml")))
   )
+  image_id = run_cmd("sh", "-c", "aws ec2 describe-images --owners 'aws-marketplace' --filters 'Name=product-code,Values=cynhm1j9d2839l7ehzmnes1n0' --query 'sort_by(Images, &CreationDate)[-1].[ImageId]' --output 'text'")
 }
 
 terraform {
@@ -53,7 +54,7 @@ inputs = {
   name               = "generic"
   vpc_id             = dependency.vpc.outputs.vpc_id
   subnets            = dependency.vpc.outputs.private_subnet_ids
-  ami                = local.env.cluster.agent.image
+  ami                = local.image_id
   asg                = {
                          min : local.env.cluster.agent.replicas.min,
                          max : local.env.cluster.agent.replicas.max,
@@ -63,7 +64,9 @@ inputs = {
   enable_autoscaler  = true
   instance_type      = local.env.cluster.agent.type
   spot               = false
-  download           = false
+  download           = true
+  rke2_version       = local.env.cluster.rke2_version
+  iam_instance_profile = "InstanceOpsRole"
 
   extra_security_group_ids = [dependency.elb.outputs.pool_sg_id]
   ssh_authorized_keys = [dependency.ssh.outputs.public_key]
