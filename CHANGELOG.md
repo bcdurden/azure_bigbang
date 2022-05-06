@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [1.11.0]
+
+### Changed
+
+- Changed from declaring an AMI to dynamically finding the latest ami id for CIS Amazon Linux 2 STIG
+- Updated init_script in env.yaml to apply needed node configurations for the CIS STIG image
+- Enabled rke2 download on node startup to allow for using CIS STIG image
 
 ## [1.10.0]
 
