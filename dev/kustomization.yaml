@@ -9,7 +9,7 @@ patchesStrategicMerge:
 ## Enable the line below if a secrets.enc.yaml is created in this directory
 # - secrets.enc.yaml
 - |-
-  apiVersion: source.toolkit.fluxcd.io/v1beta1
+  apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: GitRepository
   metadata:
     name: bigbang
