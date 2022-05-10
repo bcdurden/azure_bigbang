@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [1.12.0]
+
+### Changed
+
+- Updated base to BigBang 1.33.0
+- Update Flux source API versions to `v1beta2`
+
 ## [1.11.0]
 
 ### Changed

@@ -1,7 +1,7 @@
 # When updating the version of BigBang, make sure to update
 #   both the bases reference and the GitRepository reference
 bases:
-- git::https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base?ref=1.31.0
+- git::https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base?ref=1.33.0
 configMapGenerator:
   - name: common
     behavior: merge
@@ -10,11 +10,11 @@ configMapGenerator:
 patchesStrategicMerge:
 - secrets.enc.yaml
 - |-
-  apiVersion: source.toolkit.fluxcd.io/v1beta1
+  apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: GitRepository
   metadata:
     name: bigbang
   spec:
     ref:
       $patch: replace
-      tag: "1.31.0"
+      tag: "1.33.0"

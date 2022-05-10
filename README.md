@@ -270,7 +270,7 @@ cd ../dev/
 > Replace your forked Git repo where it states `replace-with-your-git-repo`.  Replace `replace-with-your-branch` with your branch name (e.g. `template-demo` as created above).
 
 ```yaml
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: GitRepository
 metadata:
    name: environment-repo
@@ -328,8 +328,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   # If you are using a different version of Big Bang, make sure to update the `?ref=1.31.0` to the correct tag or branch.
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.31.0 | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.33.0` to the correct tag or branch.
+   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.33.0 | kubectl apply -f -
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -406,20 +406,20 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.31.0
+  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.33.0
   ```
 
 - Reference for the Big Bang helm release:
 
    ```yaml
-   apiVersion: source.toolkit.fluxcd.io/v1beta1
+   apiVersion: source.toolkit.fluxcd.io/v1beta2
    kind: GitRepository
    metadata:
       name: bigbang
    spec:
       ref:
          $patch: replace
-         tag: "1.31.0"
+         tag: "1.33.0"
    ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
@@ -427,7 +427,7 @@ To update `dev/kustomization.yaml`, you would create a `mergePatch` like the fol
 ```yaml
 patchesStrategicMerge:
 - |-
-  apiVersion: source.toolkit.fluxcd.io/v1beta1
+  apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: GitRepository
   metadata:
     name: bigbang
@@ -435,7 +435,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      tag: "1.31.0"
+      tag: "1.33.0"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -444,7 +444,7 @@ Then, commit your change:
 
 ```shell
    git add kustomization.yaml
-   git commit -m "feat(dev): update bigbang to 1.31.0"
+   git commit -m "feat(dev): update bigbang to 1.33.0"
    git push
 ```
 
