@@ -107,6 +107,7 @@ By default, Big Bang will use the cluster's default `StorageClass` to dynamicall
 > Without a default storage class, some Big Bang components, like Elasticsearch, Jaeger, or Twistlock, will never reach the running state.
 
 ```shell
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.5"
 kubectl apply -f ./terraform/storageclass/ebs-gp2-storage-class.yaml
 ```
 
