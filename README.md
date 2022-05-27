@@ -294,6 +294,64 @@ git commit -m "chore: updated git repo"
 git push
 ```
 
+## Configure All GitRepositories with Credentials and CA Certificate
+
+If you are in an airgap or high side environment and will need to be re-hosting BigBang packages and are not able to use SSH to have Fluxv2 pull the repos, you can still use HTTPS with a "self-signed" DoD certificate via configuring the following:
+
+Create a sops encrypted secret template within `prod/repo-ca-credentials.yaml.enc` :
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-ca-credentials
+  namespace: bigbang
+stringData:
+  username: USERNAME
+  password: PASS
+  caCert: |
+    -------PEM ENCODED CERT--------
+```
+Encrypt the secret with sops: `sops -e -i  prod/repo-ca-credentials.yaml.enc` .
+
+Ensure the above file is added to `prod/kustomization.yaml` under the `resources` section so it gets created in the bigbang namespace:
+```yaml
+...
+resources:
+  - repo-ca-credentials.yaml.enc
+```
+
+Add the following patches to `base/kustomization.yaml` to add the following `secretRef` configuration for every GitRepository you will have enabled, eg Jaeger:
+```yaml
+patchesStrategicMerge:
+...
+- |-
+  apiVersion: helm.toolkit.fluxcd.io/v2beta1
+  kind: HelmRelease
+  metadata:
+    name: bigbang
+    namespace: bigbang
+  spec:
+    postRenderers:
+      - kustomize:
+          patchesStrategicMerge:
+          - apiVersion: source.toolkit.fluxcd.io/v1beta2
+            kind: GitRepository
+            metadata:
+              name: jaeger
+              namespace: bigbang
+            spec:
+              secretRef:
+                name: https-ca-credentials
+```
+This will deploy the BigBang HelmRelease and patch all above GitRepositories with the https-ca-credentials secret.
+
+```shell
+# Save pull credentials into Git
+git add prod/repo-ca-credentials.yaml.enc prod/kustomization.yaml base/kustomization.yaml
+git commit -m "chore: added gitrepo creds secret and overlays"
+git push
+```
+
 ## Deploy
 
 Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) approach to deployment.  All configuration changes will be pulled and reconciled with what is stored in the Git repository.  The only exception to this is the initial manifests (e.g. `bigbang.yaml`) which points to the Git repository and path to start from.
