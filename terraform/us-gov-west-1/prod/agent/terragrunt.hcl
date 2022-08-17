@@ -66,7 +66,7 @@ inputs = {
   spot               = false
   download           = true
   rke2_version       = local.env.cluster.rke2_version
-  iam_instance_profile = "InstanceOpsRole"
+  iam_instance_profile = "InstanceOpsRole-${local.env.name}"
 
   extra_security_group_ids = [dependency.elb.outputs.pool_sg_id]
   ssh_authorized_keys = [dependency.ssh.outputs.public_key]

@@ -4,7 +4,7 @@ variable "name" {
   default     = "bigbang-dev"
 }
 
-variable "elb_target_group_arns" {
+variable "lb_target_group_arns" {
   description = "The load balancer's target group ARNs to attach to the autoscale group"
   type        = list(string)
 }
