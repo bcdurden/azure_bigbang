@@ -31,6 +31,13 @@ dependency "ssh" {
   }
 }
 
+dependency "iam-role" {
+  config_path = "../iam-role"
+  mock_outputs = {
+    this_iam_role_name = "InstanceOpsRole-${local.env.name}"
+  }
+}
+
 inputs = {
   cluster_name  = local.env.name
   vpc_id        = dependency.vpc.outputs.vpc_id
@@ -41,7 +48,7 @@ inputs = {
   download      = true
   enable_ccm    = true
   rke2_version  = local.env.cluster.rke2_version
-  iam_instance_profile = "InstanceOpsRole"
+  iam_instance_profile = dependency.iam-role.outputs.this_iam_role_name
 
   block_device_mappings = {
     size = local.env.cluster.server.storage.size
