@@ -3,6 +3,27 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+
+## [1.13.0] 2022-08-18
+
+### Added
+
+- Added terraform for IAM Role and Policy
+- Added terraform OS sysctl config for `fs.inotify`
+
+### Changed
+
+- Updated base to BigBang 1.39.0
+- Converted default storage class to GP3 and updated documentation
+- Updated RKE2 version to `1.23.9+rke2r1`
+- Reduced terraform availability zones to 2
+- Reduced RKE2 server and agent nodes to 2
+- Converted terraform image to variable
+
+### Removed
+
+- Removed `GitRepository` patch for Big Bang version
+
 ## [1.12.0]
 
 ### Changed

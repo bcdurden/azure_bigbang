@@ -102,19 +102,22 @@ Prior to deploying Big Bang, you should setup the following in the Kubernetes cl
 
 ### Storage Class
 
-By default, Big Bang will use the cluster's default `StorageClass` to dynamically provision the required persistent volumes.  This means the cluster must be able to dynamically provision persistent volume claims (PVCs).  Since we're on AWS, the simplest method is to use the [AWS EBS](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AmazonEBS.html) Storage Class using Kubernetes' in tree [AWS cloud provider](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
+By default, Big Bang will use the cluster's default `StorageClass` to dynamically provision the required persistent volumes.  This means the cluster must be able to dynamically provision persistent volume claims (PVCs).  Since we're on AWS, we will use an [AWS EBS](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AmazonEBS.html) Storage Class managed by the [AWS EBS Cloud Storage Interface (CSI) driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver).
 
 > Without a default storage class, some Big Bang components, like Elasticsearch, Jaeger, or Twistlock, will never reach the running state.
 
 ```shell
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.5"
-kubectl apply -f ./terraform/storageclass/ebs-gp2-storage-class.yaml
+# Install the CSI driver
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver.git//deploy/kubernetes/overlays/stable"
+
+# Create the default storage class
+kubectl apply -f ./terraform/storageclass/ebs-gp3-storage-class.yaml
 ```
 
-If you have an alternative storage class, you can run the following to replace the EBS GP2 one provided.
+If you have an alternative storage class, you can run the following to replace the EBS GP3 one provided.
 
 ```shell
-kubectl patch storageclass ebs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass gp3 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 
 # Install your storage of choice, for example...
 # For example...
@@ -164,14 +167,15 @@ Once the terraform has run, you will have the following resources deployed:
 - [Virtual Private Cloud (VPC)](https://aws.amazon.com/vpc/?vpc-blogs.sort-by=item.additionalFields.createdDate&vpc-blogs.sort-order=desc)
 - [Internet Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html)
 - Public subnets
-  - One for each [availability zone](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
+  - Different [availability zones](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
   - VPC CIDR traffic routed locally
   - Connected to Internet
 - Private subnets
-  - One for each [availability zone](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
+  - Different [availability zones](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
   - VPC CIDR traffic routed locally
   - Other traffic routed to [NAT Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html)
-- NAT Gateway
+- NAT Gateways
+  - Different [availability zones](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
   - [Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html) assigned for internet access
   - Prevents internet ingress to private subnet
   - Allows internet egress from private subnet
@@ -213,9 +217,9 @@ subgraph VPC
   igw(Internet Gateway) ---|HTTP / HTTPS Only| elb
 
   igw(Internet Gateway) ---|SSH\nWhitelist IPs| jump
-  igw(Internet Gateway) ---|Egress Only| nat1 & nat2 & nat3
+  igw(Internet Gateway) ---|Egress Only| nat1 & nat2
 
-  elb(Elastic Load Balancer) ---|Node Ports| a1 & a2 & a3
+  elb(Elastic Load Balancer) ---|Node Ports| a1 & a2
 
   jump -.- bscale(Autoscale: Bastion)
 
@@ -244,19 +248,8 @@ subgraph VPC
     end
   end
 
-  subgraph zc [Zone C]
-    nat3 --- zcpriv
-    subgraph zcpub [Public Subnet]
-      nat3(NAT Gateway)
-    end
-    subgraph zcpriv [Private Subnet]
-      s3(RKE2 Server Node)
-      a3(RKE2 Agent Node)
-    end
-  end
-
-  s1 & s2 & s3 -.- sscale(Autoscale: Server Node Pool)
-  a1 & a2 & a3 -.- ascale(Autoscale: Agent Node Pool)
+  s1 & s2 -.- sscale(Autoscale: Server Node Pool)
+  a1 & a2 -.- ascale(Autoscale: Agent Node Pool)
 
 end
 

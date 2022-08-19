@@ -5,7 +5,7 @@ locals {
     yamldecode(file(find_in_parent_folders("region.yaml"))),
     yamldecode(file(find_in_parent_folders("env.yaml")))
   )
-  image_id = run_cmd("sh", "-c", "aws ec2 describe-images --owners 'aws-marketplace' --filters 'Name=product-code,Values=cynhm1j9d2839l7ehzmnes1n0' --query 'sort_by(Images, &CreationDate)[-1].[ImageId]' --output 'text'")
+  image_id = run_cmd("sh", "-c", format("aws ec2 describe-images --owners 'aws-marketplace' --filters 'Name=product-code,Values=%s' --query 'sort_by(Images, &CreationDate)[-1].[ImageId]' --output 'text'", local.env.image_product_code))
 }
 
 terraform {
