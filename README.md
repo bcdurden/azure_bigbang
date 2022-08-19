@@ -37,7 +37,6 @@ To deploy Big Bang, the following items are required:
 - [Iron Bank Personal Access Token](https://registry1.dso.mil) - Under your `User Profile`, copy the `CLI secret`.
 - [Repo1 Personal Access Token](https://repo1.dso.mil/-/profile/personal_access_tokens) - You will need `read_repository` permissions.
 - [Helm](https://helm.sh/docs/intro/install/)
-- [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/)
 
 In addition, the following items are recommended to assist with troubleshooting:
 
@@ -321,6 +320,7 @@ resources:
 ```
 
 Add the following patches to `base/kustomization.yaml` to add the following `secretRef` configuration for every GitRepository you will have enabled, eg Jaeger:
+
 ```yaml
 patchesStrategicMerge:
 ...
@@ -343,6 +343,7 @@ patchesStrategicMerge:
               secretRef:
                 name: https-ca-credentials
 ```
+
 This will deploy the BigBang HelmRelease and patch all above GitRepositories with the https-ca-credentials secret.
 
 ```shell
@@ -386,8 +387,8 @@ Big Bang follows a [GitOps](https://www.weave.works/blog/what-is-gitops-really) 
 
    ```shell
    # Flux is used to sync Git with the the cluster configuration
-   # If you are using a different version of Big Bang, make sure to update the `?ref=1.33.0` to the correct tag or branch.
-   kustomize build https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.33.0 | kubectl apply -f -
+   # If you are using a different version of Big Bang, make sure to update the `?ref=1.39.0` to the correct tag or branch.
+   kubectl apply -k https://repo1.dso.mil/platform-one/big-bang/bigbang.git//base/flux?ref=1.39.0
 
    # Wait for flux to complete
    kubectl get deploy -o name -n flux-system | xargs -n1 -t kubectl rollout status -n flux-system
@@ -464,21 +465,8 @@ To minimize the risk of an unexpected deployment of a BigBang release, the BigBa
 
   ```yaml
   bases:
-  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.33.0
+  - https://repo1.dso.mil/platform-one/big-bang/bigbang.git/base/?ref=1.39.0
   ```
-
-- Reference for the Big Bang helm release:
-
-   ```yaml
-   apiVersion: source.toolkit.fluxcd.io/v1beta2
-   kind: GitRepository
-   metadata:
-      name: bigbang
-   spec:
-      ref:
-         $patch: replace
-         tag: "1.33.0"
-   ```
 
 To update `dev/kustomization.yaml`, you would create a `mergePatch` like the following:
 
@@ -493,7 +481,7 @@ patchesStrategicMerge:
     interval: 1m
     ref:
       $patch: replace
-      tag: "1.33.0"
+      tag: "1.39.0"
 ```
 
 > This does not update the kustomize base, but it is unusual for that to change.
@@ -502,7 +490,7 @@ Then, commit your change:
 
 ```shell
    git add kustomization.yaml
-   git commit -m "feat(dev): update bigbang to 1.33.0"
+   git commit -m "feat(dev): update bigbang to 1.39.0"
    git push
 ```
 

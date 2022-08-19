@@ -9,7 +9,8 @@
 
 locals {
   # Number of availability zones determines number of CIDRs we need
-  num_azs = length(data.aws_availability_zones.available.names)
+  num_azs = min(length(data.aws_availability_zones.available.names), var.num_azs)
+  index   = range(local.num_azs)
 
   # Size of the CIDR range, this is added to the VPC CIDR bits
   # For example if the VPC CIDR is 10.0.0.0/16 and the CIDR size is 8, the CIDR will be 10.0.xx.0/24
@@ -17,11 +18,6 @@ locals {
 
   # Step of CIDR range.  How much space to leave between CIDR sets (public, private, intra)
   cidr_step = max(10, local.num_azs)
-
-  # Based on VPC CIDR, create subnet ranges
-  cidr_index           = range(local.num_azs)
-  public_subnet_cidrs  = [for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i)]
-  private_subnet_cidrs = [for i in local.cidr_index : cidrsubnet(var.vpc_cidr, local.cidr_size, i + local.cidr_step)]
 }
 
 # https://github.com/terraform-aws-modules/terraform-aws-vpc
@@ -31,9 +27,9 @@ module "vpc" {
   name = var.name
   cidr = var.vpc_cidr
 
-  azs             = data.aws_availability_zones.available.names
-  public_subnets  = local.public_subnet_cidrs
-  private_subnets = local.private_subnet_cidrs
+  azs             = [for i in local.index : data.aws_availability_zones.available.names[i]]
+  public_subnets  = [for i in local.index : cidrsubnet(var.vpc_cidr, local.cidr_size, i)]
+  private_subnets = [for i in local.index : cidrsubnet(var.vpc_cidr, local.cidr_size, i + local.cidr_step)]
 
   # If you have resources in multiple Availability Zones and they share one NAT gateway,
   # and if the NAT gateway’s Availability Zone is down, resources in the other Availability

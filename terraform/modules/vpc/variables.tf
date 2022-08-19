@@ -15,6 +15,12 @@ variable "aws_region" {
   default     = "us-gov-west-1"
 }
 
+variable "num_azs" {
+  description = "The number of availability zones to use"
+  type        = number
+  default     = 2
+}
+
 variable "tags" {
   description = "The tags to apply to resources"
   type        = map(string)
