@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.13.1] 2022-09-06
+
+### Changed
+
+- Updated base to BigBang 1.41.0
+- Updated RKE2 to v1.23.10+rke2r1
+- Increased control plane nodes to 3. ([Reference](https://etcd.io/docs/v3.5/faq/#why-an-odd-number-of-cluster-members))
+
 ## [1.13.0] 2022-08-18
 
 ### Added

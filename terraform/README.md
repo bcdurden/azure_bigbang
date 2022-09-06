@@ -182,10 +182,11 @@ Once the terraform has run, you will have the following resources deployed:
 - [RKE2](https://docs.rke2.io/) Kubernetes Cluster
   - RKE2 Control Plane
   - RKE2 Servers
-    - Autoscaled node pool
+    - Autoscaled node pool (min. 3)
+      > If additional server nodes are needed, insure there is an [odd number to reach a quorum](https://etcd.io/docs/v3.5/faq/#why-an-odd-number-of-cluster-members).
     - Anti-affinity
   - RKE2 Agents (Generic)
-    - Autoscaled node pool
+    - Autoscaled node pool (min. 2)
     - Anti-affinity
   - Security Groups
     - Egress not restricted
@@ -233,6 +234,7 @@ subgraph VPC
     subgraph zapriv [Private Subnet]
       cp(RKE2 Control Plane\nLoad Balancer)
       s1(RKE2 Server Node)
+      s3(RKE2 Server Node)
       a1(RKE2 Agent Node)
     end
   end
@@ -248,7 +250,7 @@ subgraph VPC
     end
   end
 
-  s1 & s2 -.- sscale(Autoscale: Server Node Pool)
+  s1 & s3 & s2 -.- sscale(Autoscale: Server Node Pool)
   a1 & a2 -.- ascale(Autoscale: Agent Node Pool)
 
 end
