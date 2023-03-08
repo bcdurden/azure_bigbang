@@ -10,7 +10,7 @@ metadata:
   namespace: bigbang
 spec:
   interval: 1m
-  url: git@github.com:bcdurden/azure_bigbang.git
+  url: ssh://git@github.com:bcdurden/azure_bigbang.git
   ref:
     branch: main
   # secretRef:
