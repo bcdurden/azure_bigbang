@@ -1,4 +1,4 @@
-domain: bigbang.dev
+domain: bigbang.sienarfleet.systems
 
 # Uncomment the following settings if using the AWS RKE2 terraform setup
 # istio:
