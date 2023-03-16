@@ -4,8 +4,8 @@ domain: bigbang.sienarfleet.systems
 istio:
   ingressGateways:
     public-ingressgateway:
-      type: "NodePort"
-      nodePortBase: 30000
+      type: "ClusterIP"
+      # nodePortBase: 30000
 
 flux:
   interval: 1m
