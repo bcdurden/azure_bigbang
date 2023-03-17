@@ -1,11 +1,11 @@
 domain: bigbang.sienarfleet.systems
 
 # Uncomment the following settings if using the AWS RKE2 terraform setup
-istio:
-  ingressGateways:
-    public-ingressgateway:
-      type: "ClusterIP"
-      # nodePortBase: 30000
+# istio:
+#   ingressGateways:
+#     public-ingressgateway:
+#       type: "NodePort"
+#       nodePortBase: 30000
 
 flux:
   interval: 1m
